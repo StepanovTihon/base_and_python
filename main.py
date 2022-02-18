@@ -56,7 +56,7 @@ def add(columns, values, tabels):
         tmpselect += "); "
         resultsql += tmpselect
     return resultsql
-#abobus
+
 
 
 conn = psycopg2.connect(dbname="Base_Of_Tenants", user="postgres", password="pass2tihon", host="localhost")
