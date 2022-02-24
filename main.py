@@ -42,19 +42,26 @@ def sample(columns, tabels):
 def add(columns, values, tabels):
     resultsql = ""
     for i in range(len(tabels)):
-        tmpselect = "INSERT INTO " + tabels[i] + "("
-        for x in columns:
-            tmp_to_split=x.split(".")
+        tmpselect = "INSERT INTO " + tabels[i] + " ("
+        desired_indexes = []
+        for x in range(len(columns)-1):
+            tmp_to_split = columns[x].split(".")
             if tmp_to_split[0] == tabels[i]:
+                desired_indexes.append(x)
                 tmpselect += str(tmp_to_split[1]) + ","
 
         tmpselect = tmpselect[0:len(tmpselect) - 1]
         tmpselect += ") VALUES ("
-        for x in values:
-            tmpselect += str(x) + ","
+        for x in range(len(values)-1):
+            if x in desired_indexes:
+                if isinstance(values[x], str):
+                    tmpselect += "'" + str(values[x]) + "',"
+                else:
+                    tmpselect += str(values[x]) + ","
         tmpselect = tmpselect[0:len(tmpselect) - 1]
         tmpselect += "); "
         resultsql += tmpselect
+    print(resultsql)
     return resultsql
 
 
@@ -62,8 +69,11 @@ def add(columns, values, tabels):
 conn = psycopg2.connect(dbname="Base_Of_Tenants", user="postgres", password="pass2tihon", host="localhost")
 cursor = conn.cursor()
 
+
 cursor.execute(add(["lodgers.name_lodgers", "lodgers.lodgers_id", "apartments.apartments_id", "apartments.address", "services.services_id", "services.services_name", "services.payment_amount", "services.apartments_id", "services.lodgers_id", "services.date_services"], ["Roma", 4, 4, "address4", 5, "Water", 5000, 4, 4, "2022-02-01"], ["apartments", "lodgers", "services"]))
-records = cursor.fetchall()
+#records = cursor.fetchall()
+conn.commit()
 cursor.close()
+
 conn.close()
-print(records)
+#print(records)
