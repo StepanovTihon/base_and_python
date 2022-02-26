@@ -25,6 +25,7 @@ def search_for_matches(massiv):
         return ";"
 
 
+
 def sample(columns, tabels):
     tmpselect = "SELECT "
     for x in columns:
@@ -64,16 +65,49 @@ def add(columns, values, tabels):
     print(resultsql)
     return resultsql
 
+def create_apartments(you_address):
+    cursor = conn.cursor()
+
+    cursor.execute(f"Insert into apartments(address) values('{you_address}');")
+    # records = cursor.fetchall()
+    conn.commit()
+    cursor.close()
+
+    conn.close()
+
+
+
+def read_apartments(you_address):
+    cursor = conn.cursor()
+
+    cursor.execute(f"Select lodgers_id from apartments where address = '{you_address}'")
+
+    records = cursor.fetchall()
+
+    cursor.execute(f"Select name_lodgers from lodgers where lodgers_id = '{records[0][0]}'")
+    records = cursor.fetchall()
+    cursor.close()
+
+    conn.close()
+    return records
+
+
+def update_apartments(you_address, new_lodgers):
+    cursor = conn.cursor()
+
+    cursor.execute(f"Delete from apartments Where address = '{you_address}'")
+    conn.commit()
+    cursor.execute(f"Select lodgers_id from lodgers where name_lodgers = '{new_lodgers}'")
+    records = cursor.fetchall()
+    cursor.execute(f"Insert into apartments(address,lodgers_id) values('{you_address}', {records[0][0]})")
+    conn.commit()
+    cursor.close()
+
+    conn.close()
+    return records
 
 
 conn = psycopg2.connect(dbname="Base_Of_Tenants", user="postgres", password="pass2tihon", host="localhost")
-cursor = conn.cursor()
-
-
-cursor.execute(add(["lodgers.name_lodgers", "lodgers.lodgers_id", "apartments.apartments_id", "apartments.address", "services.services_id", "services.services_name", "services.payment_amount", "services.apartments_id", "services.lodgers_id", "services.date_services"], ["Roma", 4, 4, "address4", 5, "Water", 5000, 4, 4, "2022-02-01"], ["apartments", "lodgers", "services"]))
-#records = cursor.fetchall()
-conn.commit()
-cursor.close()
-
+update_apartments("address99", "Tihon")
 conn.close()
 #print(records)
