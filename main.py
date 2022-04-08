@@ -65,23 +65,14 @@ def add(columns, values, tabels):
     print(resultsql)
     return resultsql
 
-def create_apartments_admin(you_address):
+def create_apartments(you_address):
     cursor = conn.cursor()
 
     cursor.execute(f"Insert into apartments(address) values('{you_address}');")
     # records = cursor.fetchall()
     conn.commit()
-    cursor.close()
 
-    conn.close()
-
-
-
-def read_apartments(lodgers_id):
-    cursor = conn.cursor()
-
-
-    cursor.execute(f"Select address from apartments where lodgers_id = '{lodgers_id}'")
+    cursor.execute(f"Select address from apartments where address = '{you_address}'")
     records = cursor.fetchall()
     cursor.close()
 
@@ -89,7 +80,20 @@ def read_apartments(lodgers_id):
     return records
 
 
-def update_apartments_admin(you_address, new_lodgers):
+
+def read_apartments(lodgers_id):
+    cursor = conn.cursor()
+
+
+    cursor.execute(f"Select address, name_lodgers from apartments, lodgers where apartments.lodgers_id = '{lodgers_id}' and lodgers.lodgers_id = '{lodgers_id}'")
+    records = cursor.fetchall()
+    cursor.close()
+
+    conn.close()
+    return records
+
+
+def update_apartments(you_address, new_lodgers):
     cursor = conn.cursor()
 
 
@@ -97,13 +101,15 @@ def update_apartments_admin(you_address, new_lodgers):
     records = cursor.fetchall()
     cursor.execute(f"UPDATE apartments SET lodgers_id = {records[0][0]} WHERE address= '{you_address}';")
     conn.commit()
+    cursor.execute(f"Select address, name_lodgers from apartments, lodgers where apartments.lodgers_id = '{new_lodgers}' and lodgers.lodgers_id = '{new_lodgers}'")
+    records = cursor.fetchall()
     cursor.close()
 
     conn.close()
+    return
 
 
-
-def delete_apartments_admin(you_address):
+def delete_apartments(you_address):
     cursor = conn.cursor()
 
     cursor.execute(f"Delete from apartments Where address = '{you_address}'")
@@ -112,18 +118,31 @@ def delete_apartments_admin(you_address):
 
     conn.close()
 
-def create_lodgers_admin(name_lodgers):
+def create_lodgers(name_lodgers):
     cursor = conn.cursor()
 
     cursor.execute(f"Insert into lodgers(name_lodgers) values('{name_lodgers}');")
     # records = cursor.fetchall()
     conn.commit()
+    cursor.execute(f"Select * from lodgers where name_lodgers = '{name_lodgers}'")
+    records = cursor.fetchall()
     cursor.close()
 
     conn.close()
+    return
+
+def read_lodgers(lodgers_id):
+    cursor = conn.cursor()
 
 
-def delete_lodgers_admin(name_lodgers):
+    cursor.execute(f"Select * from lodgers where lodgers.lodgers_id = '{lodgers_id}'")
+    records = cursor.fetchall()
+    cursor.close()
+
+    conn.close()
+    return records
+
+def delete_lodgers(name_lodgers):
     cursor = conn.cursor()
 
     cursor.execute(f"Delete from lodgers Where name_lodgers = '{name_lodgers}'")
@@ -132,7 +151,7 @@ def delete_lodgers_admin(name_lodgers):
 
     conn.close()
 
-def create_services_admin(name_services, summ_of_payment, address, name_lodgers, date):
+def create_services(name_services, summ_of_payment, address, name_lodgers, date):
     cursor = conn.cursor()
 
 
@@ -146,9 +165,12 @@ def create_services_admin(name_services, summ_of_payment, address, name_lodgers,
     cursor.execute(f"Insert into services(services_name,payment_amount,apartments_id,lodgers_id, date_services) values('{name_services}',{summ_of_payment},{apartments_id},{lodgers_id},'{date}');")
     # records = cursor.fetchall()
     conn.commit()
+    cursor.execute(f"Select * from services where services_name = '{name_services}' AND lodgers_id = '{lodgers_id} AND date_services = '{date}'")
+    records = cursor.fetchall()
     cursor.close()
 
     conn.close()
+    return records
 
 def read_services(lodgers_id):
     cursor = conn.cursor()
@@ -176,7 +198,33 @@ def pay_services(lodgers_id, date, name_services):
 
     conn.close()
 
+def new_token(lodgers_id, token):
+    cursor = conn.cursor()
+
+#CURDATE()
+
+
+    cursor.execute(f"UPDATE lodgers SET token = {token} WHERE lodgers_id = {lodgers_id};")
+    # records = cursor.fetchall()
+    conn.commit()
+    cursor.close()
+
+    conn.close()
+
+def read_token(lodgers_id):
+    cursor = conn.cursor()
+
+#CURDATE()
+
+
+    cursor.execute(f"Select token, token_time from lodgers where lodgers_id = '{lodgers_id}'")
+    # records = cursor.fetchall()
+    conn.commit()
+    cursor.close()
+
+    conn.close()
+
 conn = psycopg2.connect(dbname="Base_Of_Tenants", user="postgres", password="pass2tihon", host="localhost")
-print(update_apartments_admin("address1","Platon"))
+print(create_apartments("new_address"))
 conn.close()
 
