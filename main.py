@@ -1,69 +1,11 @@
+import json
+import random
+
 import psycopg2
+from flask import Flask, request
 
+app = Flask(__name__)
 
-def search_for_matches(massiv):
-    tmp_apartments = 0
-    tmp_lodgers = 0
-    tmp_services = 0
-    for x in massiv:
-        if x == "apartments":
-            tmp_apartments = 1
-    for x in massiv:
-        if x == "lodgers":
-            tmp_lodgers = 1
-    for x in massiv:
-        if x == "services":
-            tmp_services = 1
-    if tmp_apartments + tmp_services + tmp_lodgers == 3:
-        return " Where apartments.apartments_id = services.apartments_id AND lodgers.lodgers_id = services.lodgers_id;"
-    elif tmp_apartments + tmp_services == 2:
-        return " Where apartments.apartments_id = services.apartments_id;"
-    elif tmp_lodgers + tmp_services == 2:
-        return " Where lodgers.lodgers_id = services.lodgers_id;"
-
-    else:
-        return ";"
-
-
-
-def sample(columns, tabels):
-    tmpselect = "SELECT "
-    for x in columns:
-        tmpselect += x + ", "
-    tmpselect = tmpselect[0:len(tmpselect) - 1]
-    tmpselect += " From "
-    for x in tabels:
-
-        tmpselect += x + ", "
-    tmpselect = tmpselect[0:len(tmpselect) - 1]
-    tmpselect += search_for_matches(tabels)
-    return tmpselect
-
-
-def add(columns, values, tabels):
-    resultsql = ""
-    for i in range(len(tabels)):
-        tmpselect = "INSERT INTO " + tabels[i] + " ("
-        desired_indexes = []
-        for x in range(len(columns)-1):
-            tmp_to_split = columns[x].split(".")
-            if tmp_to_split[0] == tabels[i]:
-                desired_indexes.append(x)
-                tmpselect += str(tmp_to_split[1]) + ","
-
-        tmpselect = tmpselect[0:len(tmpselect) - 1]
-        tmpselect += ") VALUES ("
-        for x in range(len(values)-1):
-            if x in desired_indexes:
-                if isinstance(values[x], str):
-                    tmpselect += "'" + str(values[x]) + "',"
-                else:
-                    tmpselect += str(values[x]) + ","
-        tmpselect = tmpselect[0:len(tmpselect) - 1]
-        tmpselect += "); "
-        resultsql += tmpselect
-    print(resultsql)
-    return resultsql
 
 def create_apartments(you_address):
     cursor = conn.cursor()
@@ -72,8 +14,8 @@ def create_apartments(you_address):
     # records = cursor.fetchall()
     conn.commit()
 
-    cursor.execute(f"Select address from apartments where address = '{you_address}'")
-    records = cursor.fetchall()
+    cursor.execute(f"Select * from apartments where address = '{you_address}'")
+    records = cursor.fetchall()[0][0]
     cursor.close()
 
     conn.close()
@@ -106,7 +48,7 @@ def update_apartments(you_address, new_lodgers):
     cursor.close()
 
     conn.close()
-    return
+    return records
 
 
 def delete_apartments(you_address):
@@ -117,29 +59,53 @@ def delete_apartments(you_address):
     cursor.close()
 
     conn.close()
+    return "deletion completed"
 
-def create_lodgers(name_lodgers):
-    cursor = conn.cursor()
+def create_lodgers(name_lodgers, login, password):
+    conn = psycopg2.connect(dbname="Base_Of_Tenants", user="postgres", password="pass2tihon", host="localhost")
+    with conn:
+        with conn.cursor() as cursor:
 
-    cursor.execute(f"Insert into lodgers(name_lodgers) values('{name_lodgers}');")
-    # records = cursor.fetchall()
-    conn.commit()
-    cursor.execute(f"Select * from lodgers where name_lodgers = '{name_lodgers}'")
-    records = cursor.fetchall()
-    cursor.close()
+            cursor.execute(f"Insert into lodgers(name_lodgers,login,password) values('{name_lodgers}','{login}','{password}');")
+            # records = cursor.fetchall()
+            conn.commit()
+            cursor.execute(f"Select * from lodgers where name_lodgers = '{name_lodgers}'")
+            records = cursor.fetchall()
 
-    conn.close()
-    return
+
+
+    return records
 
 def read_lodgers(lodgers_id):
-    cursor = conn.cursor()
+    conn = psycopg2.connect(dbname="Base_Of_Tenants", user="postgres", password="pass2tihon", host="localhost")
+
+    with conn:
+        with conn.cursor() as cursor:
 
 
-    cursor.execute(f"Select * from lodgers where lodgers.lodgers_id = '{lodgers_id}'")
-    records = cursor.fetchall()
-    cursor.close()
 
-    conn.close()
+
+            cursor.execute(f"Select name_lodgers, lodgers_id, login, password, token from lodgers where lodgers.lodgers_id = '{lodgers_id}'")
+            records = cursor.fetchall()
+            conn.rollback()
+
+
+    return records[0]
+
+def read_all_lodgers():
+    conn = psycopg2.connect(dbname="Base_Of_Tenants", user="postgres", password="pass2tihon", host="localhost")
+
+    with conn:
+        with conn.cursor() as cursor:
+
+
+
+
+            cursor.execute("Select name_lodgers, lodgers_id, login, password, token from lodgers")
+            records = cursor.fetchall()
+            conn.rollback()
+
+
     return records
 
 def delete_lodgers(name_lodgers):
@@ -150,6 +116,7 @@ def delete_lodgers(name_lodgers):
     cursor.close()
 
     conn.close()
+    return "deletion completed"
 
 def create_services(name_services, summ_of_payment, address, name_lodgers, date):
     cursor = conn.cursor()
@@ -197,34 +164,82 @@ def pay_services(lodgers_id, date, name_services):
     cursor.close()
 
     conn.close()
+    return "service paid"
 
 def new_token(lodgers_id, token):
-    cursor = conn.cursor()
+    conn = psycopg2.connect(dbname="Base_Of_Tenants", user="postgres", password="pass2tihon", host="localhost")
+
+    with conn:
+        with conn.cursor() as cursor:
+
 
 #CURDATE()
 
 
-    cursor.execute(f"UPDATE lodgers SET token = {token} WHERE lodgers_id = {lodgers_id};")
-    # records = cursor.fetchall()
-    conn.commit()
-    cursor.close()
+            cursor.execute(f"UPDATE lodgers SET token = {token} WHERE lodgers_id = {lodgers_id};")
+            # records = cursor.fetchall()
+            conn.commit()
 
-    conn.close()
 
 def read_token(lodgers_id):
-    cursor = conn.cursor()
+    conn = psycopg2.connect(dbname="Base_Of_Tenants", user="postgres", password="pass2tihon", host="localhost")
 
-#CURDATE()
+    with conn:
+        with conn.cursor() as cursor:
 
 
-    cursor.execute(f"Select token, token_time from lodgers where lodgers_id = '{lodgers_id}'")
-    # records = cursor.fetchall()
-    conn.commit()
-    cursor.close()
 
-    conn.close()
+
+            cursor.execute(f"Select token, token_time from lodgers where lodgers_id = '{lodgers_id}'")
+            records = cursor.fetchall()
+            conn.commit()
+
+    return records[0][0]
+
+@app.route('/info/<int:id>/<int:token>')
+def get_lodgers(id,token):
+
+    post = read_lodgers(id)
+    if post[4] != token:
+        return "error please relogin"
+
+    to_json_keys = ['name_lodgers', 'lodgers_id', 'login', 'password']
+    post_json = {}
+    for index, value in enumerate(post):
+        post_json[to_json_keys[index]] = value
+    return json.dumps(post_json)
+
+
+@app.route('/registration/', methods=['POST'])
+def registration():
+    post = request.json
+    ret=create_lodgers(post["name"],post["login"],post["password"])
+
+    return "all good"
+
+@app.route('/login/', methods=['POST'])
+def login():
+
+    post = request.json
+    ret=read_all_lodgers()
+    for i in range(len(ret)):
+        if ret[i][2] == post["login"] and ret[i][3] == post["password"]:
+            new_token(ret[i][1], random.uniform(0,999999))
+            print(read_token(ret[i][1]))
+            return str(read_token(ret[i][1]))
+    return "error"
+
+
+
+@app.route("/")
+def hello():
+    return "Hello World!"
+
+
+if __name__ == "__main__":
+    app.run()
 
 conn = psycopg2.connect(dbname="Base_Of_Tenants", user="postgres", password="pass2tihon", host="localhost")
-print(create_apartments("new_address"))
+print(read_all_lodgers())
 conn.close()
 
