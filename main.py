@@ -8,30 +8,42 @@ app = Flask(__name__)
 
 
 def create_apartments(you_address):
-    cursor = conn.cursor()
+    conn = psycopg2.connect(dbname="Base_Of_Tenants", user="postgres", password="pass2tihon", host="localhost")
+    with conn:
+        with conn.cursor() as cursor:
 
-    cursor.execute(f"Insert into apartments(address) values('{you_address}');")
+
+            cursor.execute(f"Insert into apartments(address) values('{you_address}');")
     # records = cursor.fetchall()
-    conn.commit()
+            conn.commit()
 
-    cursor.execute(f"Select * from apartments where address = '{you_address}'")
-    records = cursor.fetchall()[0][0]
-    cursor.close()
+            cursor.execute(f"Select address, apartments_id from apartments where address = '{you_address}'")
+            records = cursor.fetchall()
 
-    conn.close()
     return records
 
 
 
-def read_apartments(lodgers_id):
-    cursor = conn.cursor()
+def read_apartments(apartments_id):
+    conn = psycopg2.connect(dbname="Base_Of_Tenants", user="postgres", password="pass2tihon", host="localhost")
+    with conn:
+        with conn.cursor() as cursor:
 
 
-    cursor.execute(f"Select address, name_lodgers from apartments, lodgers where apartments.lodgers_id = '{lodgers_id}' and lodgers.lodgers_id = '{lodgers_id}'")
-    records = cursor.fetchall()
-    cursor.close()
 
-    conn.close()
+            cursor.execute(f"Select address from apartments where apartments_id = '{apartments_id}'")
+            records = cursor.fetchall()
+
+    return records
+
+
+def read_all_apartments():
+    conn = psycopg2.connect(dbname="Base_Of_Tenants", user="postgres", password="pass2tihon", host="localhost")
+    with conn:
+        with conn.cursor() as cursor:
+            cursor.execute(f"Select apartments_id, address from apartments")
+            records = cursor.fetchall()
+
     return records
 
 
@@ -51,14 +63,14 @@ def update_apartments(you_address, new_lodgers):
     return records
 
 
-def delete_apartments(you_address):
-    cursor = conn.cursor()
+def delete_apartments(apartments_id):
+    conn = psycopg2.connect(dbname="Base_Of_Tenants", user="postgres", password="pass2tihon", host="localhost")
+    with conn:
+        with conn.cursor() as cursor:
 
-    cursor.execute(f"Delete from apartments Where address = '{you_address}'")
-    conn.commit()
-    cursor.close()
+            cursor.execute(f"Delete from apartments Where apartments_id = '{apartments_id}'")
+            conn.commit()
 
-    conn.close()
     return "deletion completed"
 
 def create_lodgers(name_lodgers, login, password):
@@ -108,14 +120,15 @@ def read_all_lodgers():
 
     return records
 
-def delete_lodgers(name_lodgers):
-    cursor = conn.cursor()
+def delete_lodgers(id):
+    conn = psycopg2.connect(dbname="Base_Of_Tenants", user="postgres", password="pass2tihon", host="localhost")
 
-    cursor.execute(f"Delete from lodgers Where name_lodgers = '{name_lodgers}'")
-    conn.commit()
-    cursor.close()
+    with conn:
+        with conn.cursor() as cursor:
 
-    conn.close()
+            cursor.execute(f"Delete from lodgers Where lodgers_id = '{id}'")
+            conn.commit()
+
     return "deletion completed"
 
 def create_services(name_services, summ_of_payment, address, name_lodgers, date):
@@ -200,10 +213,10 @@ def read_token(lodgers_id):
 def get_lodgers(id,token):
 
     post = read_lodgers(id)
-    if post[4] != token:
+    if read_token(id) != token:
         return "error please relogin"
 
-    to_json_keys = ['name_lodgers', 'lodgers_id', 'login', 'password']
+    to_json_keys = ["name_lodgers", "lodgers_id", "login", "password", "token"]
     post_json = {}
     for index, value in enumerate(post):
         post_json[to_json_keys[index]] = value
@@ -229,7 +242,59 @@ def login():
             return str(read_token(ret[i][1]))
     return "error"
 
+@app.route('/delete_lodger/', methods=['POST'])
+def delete_lodger():
+    post = request.json
+    if read_token(post["id"]) != post["token"]:
+        return "error please relogin"
+    ret = delete_lodger(post["id"])
 
+    return "all good"
+
+@app.route('/create_home/', methods=['POST'])
+def create_home():
+
+    post = request.json
+    if read_token(post["id"]) != post["token"]:
+        return "error please relogin"
+    ret=create_apartments(post["address"])[0]
+
+    to_json_keys = ['address', 'apartments_id']
+    post_json = {}
+    for index, value in enumerate(ret):
+        post_json[to_json_keys[index]] = value
+    return json.dumps(post_json)
+
+
+@app.route('/get_home/<int:id>/<int:token>')
+def get_home(id,token):
+
+    post = read_all_apartments()
+    if read_token(id) != token:
+        return "error please relogin"
+
+    to_json_keys = ['apartments_id', 'address']
+    post_json = {}
+    resilt_json = "{"
+
+    for i in range(len(post)):
+        for index, value in enumerate(post[i]):
+            post_json[to_json_keys[index]] = value
+            print(i, index, value)
+        resilt_json += json.dumps(post_json) + ", "
+        post_json.clear()
+
+    resilt_json = resilt_json[:len(resilt_json)-2]+"}"
+    return resilt_json
+
+@app.route('/delete_home/', methods=['POST'])
+def delete_home():
+    post = request.json
+    if read_token(post["id"]) != post["token"]:
+        return "error please relogin"
+    ret = delete_apartments(post["apartments_id"])
+
+    return "all good"
 
 @app.route("/")
 def hello():
