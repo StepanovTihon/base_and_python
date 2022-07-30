@@ -125,6 +125,7 @@ def read_all_lodgers():
         with conn.cursor() as cursor:
             cursor.execute("Select name_lodgers, lodgers_id, login, password, token from lodgers")
             records = cursor.fetchall()
+
             conn.rollback()
 
             return [records, 200]
@@ -270,11 +271,12 @@ def read_token(lodgers_id):
 def to_json(keys,values):
 
     post_json = {}
-
+    print(values)
     for index, value in enumerate(values[0][0]):
-        if keys[index] = "date":
+        if keys[index] == "date":
             post_json[keys[index]] = value
         post_json[keys[index]] = value
+
 
     return post_json
 
@@ -283,11 +285,12 @@ def to_json(keys,values):
 def get_lodgers(id,token):
 
     post = read_lodgers(id)
+    print(read_token(id)[0], token)
     if read_token(id)[0] != token:
-        return "{'error':'token is deprecated'}"
+        return '{"error":"token is deprecated"}', 401
     if len(post[0]) == 0:
-        return errors[post[1]]
-    return json.dumps(to_json(["name_lodgers", "lodgers_id", "login", "password", "token"],post))
+        return errors[post[1]], 400
+    return json.dumps(to_json(["name_lodgers", "lodgers_id", "login", "password", "token"],post)), 200
 
 
 @app.route('/registration/', methods=['POST'])
@@ -300,19 +303,19 @@ def registration():
     return json.dumps(to_json(['name_lodgers', 'lodgers_id', 'login', 'password', 'token'], ret))
 
 
-@app.route('/login/', methods=['POST'])
+@app.route('/login', methods=['POST'])
 def login():
 
     post = request.json
     ret = read_all_lodgers()
     if len(ret[0]) == 0:
-        return errors[ret[1]]
-    for i in range(len(ret)):
-        if ret[i][2] == post["login"] and ret[i][3] == post["password"]:
-            new_token(ret[i][1], random.uniform(0,999999))
-            print(read_token(ret[i][1]))
-            return "{'token':'"+str(read_token(ret[i][1]))+"'}"
-    return "{'error':'Bad request'}"
+        return errors[ret[1]], 400
+    for i in range(len(ret)-1):
+        if ret[0][i][2] == post["login"] and ret[0][i][3] == post["password"]:
+
+            return '{"token":"' + str(ret[0][i][4]) + '", "lodgers_id":' + str(ret[0][i][1]) +'}', 200
+
+    return '{"error":"Bad request"}', 400
 
 
 @app.route('/delete_lodger/', methods=['POST'])
@@ -352,7 +355,7 @@ def get_home(id,token):
     for i in range(len(post)):
         for index, value in enumerate(post[i]):
             post_json[to_json_keys[index]] = value
-            print(i, index, value)
+
         resilt_json += json.dumps(post_json) + ", "
         post_json.clear()
 
@@ -403,7 +406,8 @@ def get_service(id,token):
         post_json.clear()
 
     resilt_json = resilt_json[:len(resilt_json)-2]+"}"
-    print(resilt_json)
+
+
     return resilt_json
 
 
@@ -429,7 +433,6 @@ def get_all_service(id,token):
         post_json.clear()
 
     resilt_json = resilt_json[:len(resilt_json)-2]+"]"
-    print(resilt_json)
     return resilt_json
 
 
@@ -440,7 +443,7 @@ def pay_service():
     if read_token(post["id"]) != post["token"]:
         return "{'error':'token is deprecated'}"
     ret=pay_services(post["id"], post["date"], post["name_services"])
-    print(ret)
+
     to_json_keys = ['services_name', 'payment_amount', 'date_services', 'paid', 'name_lodgers', 'lodgers_id', 'address',
                     'apartments_id']
     post_json = {}
@@ -456,7 +459,7 @@ def pay_service():
         post_json.clear()
 
     resilt_json = resilt_json[:len(resilt_json) - 2] + "]}"
-    print(resilt_json)
+
     return resilt_json
 
 
@@ -470,10 +473,15 @@ def service_delete():
     return "all good"
 
 
-@app.route("/")
+@app.route("/hello")
 def hello():
-    return "Hello World!"
+    return "{'error':'hello world'}"
 
 
 
+
+
+
+if __name__ == "__main__":
+    app.run()
 
