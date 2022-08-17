@@ -440,7 +440,8 @@ def get_indication(id, token):
     if int(read_token(id)[0]) != int(token):
         return '{"error":"token is deprecated"}'
 
-    to_json_keys = ["indications_id", "services_name", "apartments_id", "lodgers_id", "date_indications","value_indications"]
+    to_json_keys = ["indications_id", "services_name", "apartments_id", "lodgers_id", "date_indications",
+                    "value_indications"]
     post_json = {}
     result_json = '{"arr":['
 
@@ -469,21 +470,14 @@ def get_service(id, token):
     to_json_keys = ['services_name', 'payment_amount', 'date_services', 'paid', 'name_lodgers', 'lodgers_id', 'address',
                     'apartments_id']
     post_json = {}
+
+    mass = []
+    for p in post[0]:
+        mass.append({'services_name': p[0], 'payment_amount': p[1], 'date_services': str(p[2]),
+                     'paid': p[3], 'name_lodgers': p[4], 'lodgers_id': p[5],
+                     'address': p[6], 'apartments_id': p[7]})
+    return json.dumps({'arr': mass})
     result_json = '{"arr":['
-
-    for i in range(len(post[0])):
-        for index, value in enumerate(post[0][i]):
-            if index != 2:
-
-                post_json[to_json_keys[index]] = value
-            else:
-                post_json[to_json_keys[index]] = str(value)
-        result_json += json.dumps(post_json, ensure_ascii=False) + ", "
-        post_json.clear()
-
-    result_json = result_json[:len(result_json) - 2] + "]}"
-
-    return result_json
 
 
 @app.route('/get_all_service/<int:id>/<int:token>')
