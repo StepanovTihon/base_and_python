@@ -99,7 +99,7 @@ def create_lodgers(name_lodgers, login, password):
             if len(cursor.fetchall()) != 0:
                 return [[], 400]
             cursor.execute(
-                f"Insert into lodgers(name_lodgers,login,password) values('{name_lodgers}','{login}','{password}');")
+                f"Insert into lodgers(name_lodgers,login,password, token) values('{name_lodgers}','{login}','{password}', {int(random.random() * 10000)});")
             # records = cursor.fetchall()
             conn.commit()
             cursor.execute(
@@ -166,9 +166,7 @@ def create_services(name_services, summ_of_payment, apartments_id, lodgers_id, d
                 f"values('{name_services}',{summ_of_payment},{apartments_id},{lodgers_id},'{date}');")
             # records = cursor.fetchall()
             conn.commit()
-            cursor.execute(f"Select services_id, services_name,payment_amount, apartments_id,lodgers_id, "
-                           f"date_services, paid from services where services_name ='{name_services}' AND "
-                           f"lodgers_id = {lodgers_id} AND date_services = {date}")
+
             records = cursor.fetchall()
 
             return [records, 200]
@@ -331,14 +329,24 @@ def get_lodgers(id, token):
     return json.dumps(to_json(["name_lodgers", "lodgers_id", "login", "password", "token"], post)), 200
 
 
+@app.route('/AllLodger/')
+def get_all_lodgers():
+    post = read_all_lodgers()
+
+    post_json = {}
+    mass = []
+    for p in post[0]:
+        mass.append({'name_lodgers': p[0], 'lodgers_id': p[1], 'login': str(p[2]),
+                     'password': p[3], 'token': p[4]})
+    return json.dumps({'arr': mass})
+
+
 @app.route('/registration/', methods=['POST'])
 def registration():
     post = request.json
     ret = create_lodgers(post["name"], post["login"], post["password"])
-    if len(ret[0]) == 0:
-        return errors[ret[1]]
 
-    return json.dumps(to_json(['name_lodgers', 'lodgers_id', 'login', 'password', 'token'], ret))
+    return "{}", 200
 
 
 @app.route('/login', methods=['POST'])
@@ -371,13 +379,9 @@ def delete_lodger():
 @app.route('/create_home/', methods=['POST'])
 def create_home():
     post = request.json
-    if read_token(post["id"]) != post["token"]:
-        return "{'error':'token is deprecated'}"
     ret = create_apartments(post["address"])
 
-    if len(ret[0]) == 0:
-        return errors[ret[1]]
-    return json.dumps(to_json(['address', 'apartments_id'], ret))
+    return "{}", 200
 
 
 @app.route('/get_home/<int:id>/<int:token>')
@@ -414,11 +418,12 @@ def delete_home():
 @app.route('/create_service/', methods=['POST'])
 def create_service():
     post = request.json
-    if read_token(post["id"]) != post["token"]:
-        return "{'error':'token is deprecated'}"
-    ret = create_service(post["services_name", "payment_amount", "apartments_id", "lodgers_id", "date_services"])
-    return json.dumps(to_json(['services_id', 'services_name', 'payment_amount', 'apartments_id', 'lodgers_id',
-                               'date_services', 'paid'], ret))
+    if int(read_token(post["lodgers_id"])[0]) != int(post["token"]):
+        return "{'error':'token is deprecated'}", 400
+    ret = create_services(post["services_name"], post["payment_amount"], post["apartments_id"], post["lodgers_id"],
+                          post["date_services"])
+
+    return "{}", 200
 
 
 @app.route('/create_indication/', methods=['POST'])
@@ -507,27 +512,14 @@ def get_all_service(id, token):
 @app.route('/pay_service/', methods=['POST'])
 def pay_service():
     post = request.json
-    if read_token(post["id"]) != post["token"]:
-        return "{'error':'token is deprecated'}"
-    ret = pay_services(post["id"], post["date"], post["name_services"])
-
-    to_json_keys = ['services_name', 'payment_amount', 'date_services', 'paid', 'name_lodgers', 'lodgers_id', 'address',
-                    'apartments_id']
+    if int(read_token(post["lodgers_id"])[0]) != int(post["token"]):
+        return "{'error':'token is deprecated'}", 400
+    print(post)
+    ret = pay_services(post["lodgers_id"], post["date_services"], post["name_services"])
+    print(ret)
     post_json = {}
-    resilt_json = "{["
 
-    for i in range(len(ret)):
-        for index, value in enumerate(ret[i]):
-            if index != 2:
-                post_json[to_json_keys[index]] = value
-            else:
-                post_json[to_json_keys[index]] = "'" + str(value) + "'"
-        resilt_json += json.dumps(post_json) + ", "
-        post_json.clear()
-
-    resilt_json = resilt_json[:len(resilt_json) - 2] + "]}"
-
-    return resilt_json
+    return "{}", 200
 
 
 @app.route('/delete_service/', methods=['POST'])
