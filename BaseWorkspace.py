@@ -10,6 +10,19 @@ errors = {
 }
 
 
+class BaseError(Exception): pass
+
+
+class BadRequest(BaseError):
+    def __init__(self):
+        self.txt = 'BadRequest'
+
+
+class ServerError(BaseError):
+    def __init__(self):
+        self.txt = 'ServerError'
+
+
 def existence_apartments(id, you_address=''):
     conn = psycopg2.connect(dbname=data[0], user=data[1], password=data[2], host=data[3])
 
@@ -31,6 +44,7 @@ def existence_lodgers(id=-1, login=''):
                            else f"Select * from lodgers Where lodgers_id = '{id}'")
 
             return cursor.fetchall()
+    raise ServerError()
 
 
 def existence_services(name_services, date, lodgers_id, service_id=-1):
@@ -43,6 +57,7 @@ def existence_services(name_services, date, lodgers_id, service_id=-1):
                            else f"Select * from services where services_id = '{service_id}'")
 
             return cursor.fetchall()
+    raise ServerError()
 
 
 def existence_indications(services_name, lodgers_id, date_indications):
@@ -54,6 +69,7 @@ def existence_indications(services_name, lodgers_id, date_indications):
                            f"date_indications = '{date_indications}' AND lodgers_id = {lodgers_id}")
 
             return cursor.fetchall()
+    raise ServerError()
 
 
 def create_apartments(you_address):
@@ -61,8 +77,13 @@ def create_apartments(you_address):
 
     with conn:
         with conn.cursor() as cursor:
-            if len(existence_apartments(-1, you_address)) != 0:
-                return []
+            try:
+                result = existence_apartments(-1, you_address)
+            except:
+                raise ServerError()
+            else:
+                if len(existence_apartments(-1, you_address)) != 0:
+                    raise BadRequest()
 
             cursor.execute(f"Insert into apartments(address) values('{you_address}');")
             conn.commit()
@@ -70,7 +91,7 @@ def create_apartments(you_address):
             records = cursor.fetchall()
 
             return records
-    return []
+    raise ServerError()
 
 
 def read_apartments(apartments_id):
@@ -81,7 +102,7 @@ def read_apartments(apartments_id):
             records = cursor.fetchall()
 
             return records
-    return []
+    raise ServerError()
 
 
 def read_all_apartments():
@@ -92,29 +113,39 @@ def read_all_apartments():
             records = cursor.fetchall()
 
             return records
-    return []
+    raise ServerError()
 
 
 def delete_apartments(apartments_id):
     conn = psycopg2.connect(dbname=data[0], user=data[1], password=data[2], host=data[3])
     with conn:
         with conn.cursor() as cursor:
-            if len(existence_apartments(apartments_id)) == 0:
-                return []
+            try:
+                result = existence_apartments(apartments_id)
+            except:
+                raise ServerError()
+            else:
+                if len(existence_apartments(apartments_id)) == 0:
+                    raise BadRequest()
 
             cursor.execute(f"Delete from apartments Where apartments_id = '{apartments_id}'")
             conn.commit()
 
             return []
-    return []
+    raise ServerError()
 
 
 def create_lodgers(name_lodgers, login, password):
     conn = psycopg2.connect(dbname=data[0], user=data[1], password=data[2], host=data[3])
     with conn:
         with conn.cursor() as cursor:
-            if len(existence_lodgers(login)) != 0:
-                return []
+            try:
+                result = existence_lodgers(login)
+            except:
+                raise ServerError()
+            else:
+                if len(existence_lodgers(login)) != 0:
+                    raise BadRequest()
             cursor.execute(
                 f"Insert into lodgers(name_lodgers,login,password, token) values('{name_lodgers}','{login}',"
                 f"'{password}', {int(random.random() * 10000)});")
@@ -124,7 +155,7 @@ def create_lodgers(name_lodgers, login, password):
                 f"Select name_lodgers, lodgers_id, login, password, token from lodgers where name_lodgers = '{name_lodgers}'")
             records = cursor.fetchall()
             return records
-    return []
+    raise ServerError()
 
 
 def read_lodgers(lodgers_id):
@@ -137,7 +168,7 @@ def read_lodgers(lodgers_id):
             records = cursor.fetchall()
             conn.rollback()
             return records
-    return []
+    raise ServerError()
 
 
 def read_all_lodgers():
@@ -151,7 +182,7 @@ def read_all_lodgers():
             conn.rollback()
 
             return records
-    return []
+    raise ServerError()
 
 
 def delete_lodgers(id):
@@ -159,13 +190,18 @@ def delete_lodgers(id):
 
     with conn:
         with conn.cursor() as cursor:
-            if len(existence_lodgers(-1, login)) == 0:
-                return []
+            try:
+                result = existence_lodgers(-1, login)
+            except:
+                raise ServerError()
+            else:
+                if len(existence_lodgers(-1, login)) == 0:
+                    raise BadRequest()
             cursor.execute(f"Delete from lodgers Where lodgers_id = '{id}'")
             conn.commit()
 
             return []
-    return []
+    raise ServerError()
 
 
 def create_services(name_services, summ_of_payment, apartments_id, lodgers_id, date):
@@ -173,8 +209,13 @@ def create_services(name_services, summ_of_payment, apartments_id, lodgers_id, d
 
     with conn:
         with conn.cursor() as cursor:
-            if len(existence_services(name_services, date, lodgers_id)) != 0:
-                return []
+            try:
+                result = existence_services(name_services, date, lodgers_id)
+            except:
+                raise ServerError()
+            else:
+                if len(existence_services(name_services, date, lodgers_id)) != 0:
+                    raise BadRequest()
             cursor.execute(
                 f"Insert into services(services_name,payment_amount,apartments_id,lodgers_id, date_services, paid) "
                 f"values('{name_services}',{summ_of_payment},{apartments_id},{lodgers_id},'{date}', false);")
@@ -184,7 +225,7 @@ def create_services(name_services, summ_of_payment, apartments_id, lodgers_id, d
             records = cursor.fetchall()
 
             return records
-    return []
+    raise ServerError()
 
 
 def read_services(lodgers_id):
@@ -199,7 +240,7 @@ def read_services(lodgers_id):
             records = cursor.fetchall()
 
             return records
-    return []
+    raise ServerError()
 
 
 def read_all_services():
@@ -214,7 +255,7 @@ def read_all_services():
             records = cursor.fetchall()
 
             return records
-    return []
+    raise ServerError()
 
 
 def pay_services(lodgers_id, date, name_services):
@@ -222,8 +263,13 @@ def pay_services(lodgers_id, date, name_services):
 
     with conn:
         with conn.cursor() as cursor:
-            if len(existence_services(name_services, date, lodgers_id)) == 0:
-                return []
+            try:
+                result = existence_services(name_services, date, lodgers_id)
+            except:
+                raise ServerError()
+            else:
+                if len(existence_services(name_services, date, lodgers_id)) == 0:
+                    raise BadRequest()
             cursor.execute(f"UPDATE services SET paid = True WHERE lodgers_id = {lodgers_id} AND date_services = "
                            f"'{date}' AND services_name = '{name_services}';")
             # records = cursor.fetchall()
@@ -236,7 +282,7 @@ def pay_services(lodgers_id, date, name_services):
             records = cursor.fetchall()
 
             return records
-    return []
+    raise ServerError()
 
 
 def delete_service(service_id):
@@ -244,13 +290,18 @@ def delete_service(service_id):
 
     with conn:
         with conn.cursor() as cursor:
-            if len(existence_services('', '', -1, service_id)) == 0:
-                return []
+            try:
+                result = existence_services('', '', -1, service_id)
+            except:
+                raise ServerError()
+            else:
+                if len(existence_services('', '', -1, service_id)) == 0:
+                    raise BadRequest()
             cursor.execute(f"Delete from services Where services_id = '{service_id}'")
             conn.commit()
 
             return []
-    return []
+    raise ServerError()
 
 
 def create_indications(services_name, apartments_id, lodgers_id, date_indications, value_indications):
@@ -258,8 +309,13 @@ def create_indications(services_name, apartments_id, lodgers_id, date_indication
 
     with conn:
         with conn.cursor() as cursor:
-            if len(existence_indications(services_name, lodgers_id, date_indications)) != 0:
-                return []
+            try:
+                result = existence_indications(services_name, lodgers_id, date_indications)
+            except:
+                raise ServerError()
+            else:
+                if len(existence_indications(services_name, lodgers_id, date_indications)) != 0:
+                    raise BadRequest()
             cursor.execute(
                 f"Insert into indications (services_name,value_indications,apartments_id,lodgers_id, date_indications) "
                 f"values('{services_name}',{value_indications},{apartments_id},{lodgers_id},'{date_indications}');")
@@ -271,7 +327,7 @@ def create_indications(services_name, apartments_id, lodgers_id, date_indication
             records = cursor.fetchall()
 
             return records
-    return []
+    raise ServerError()
 
 
 def read_indications(lodgers_id):
@@ -285,7 +341,7 @@ def read_indications(lodgers_id):
             records = cursor.fetchall()
 
             return records
-    return []
+    raise ServerError()
 
 
 def new_token(lodgers_id, token):
@@ -300,7 +356,7 @@ def new_token(lodgers_id, token):
             cursor.execute(f"Select token, token_time from lodgers where lodgers_id = '{lodgers_id}'")
             records = cursor.fetchall()
             return records
-    return []
+    raise ServerError()
 
 
 def read_token(lodgers_id):
@@ -312,4 +368,4 @@ def read_token(lodgers_id):
             conn.commit()
 
             return records[0][0]
-    return []
+    raise ServerError()

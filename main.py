@@ -9,6 +9,11 @@ from flask import Flask, request
 
 # from dotenv import load_dotenv
 
+try:
+    create_apartments("testaddress2")
+except BaseError as be:
+    print(be.txt)
+
 # load_dotenv()
 app = Flask(__name__)
 
