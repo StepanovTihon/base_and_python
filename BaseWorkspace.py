@@ -3,11 +3,7 @@ import datetime
 
 f = open('.env.txt', 'r')
 data = f.read().split("|")
-errors = {
-    400: "{'error':'Bad request'}",
-    500: "{'error':'Internal server error'}",
-    200: "{'error':'complited'}"
-}
+
 
 
 class BaseError(Exception): pass
@@ -163,7 +159,7 @@ def read_lodgers(lodgers_id):
 
     with conn:
         with conn.cursor() as cursor:
-            cursor.execute(f"Select name_lodgers, lodgers_id, login, password, token from "
+            cursor.execute(f"Select name_lodgers, lodgers_id, login, password, token, token_time from "
                            f"lodgers where lodgers.lodgers_id = '{lodgers_id}'")
             records = cursor.fetchall()
             conn.rollback()
@@ -177,6 +173,19 @@ def read_all_lodgers():
     with conn:
         with conn.cursor() as cursor:
             cursor.execute("Select name_lodgers, lodgers_id, login, password, token from lodgers")
+            records = cursor.fetchall()
+
+            conn.rollback()
+
+            return records
+    raise ServerError()
+
+def read_all_lodgers_and_address():
+    conn = psycopg2.connect(dbname=data[0], user=data[1], password=data[2], host=data[3])
+
+    with conn:
+        with conn.cursor() as cursor:
+            cursor.execute("Select name_lodgers, lodgers_id, login, password, token, apartments_id from lodgers")
             records = cursor.fetchall()
 
             conn.rollback()
@@ -344,13 +353,16 @@ def read_indications(lodgers_id):
     raise ServerError()
 
 
-def new_token(lodgers_id, token):
+def new_token(lodgers_id, token, date):
     conn = psycopg2.connect(dbname=data[0], user=data[1], password=data[2], host=data[3])
 
     with conn:
         with conn.cursor() as cursor:
             # CURDATE()
             cursor.execute(f"UPDATE lodgers SET token = {token} WHERE lodgers_id = {lodgers_id};")
+            # records = cursor.fetchall()
+            conn.commit()
+            cursor.execute(f"UPDATE lodgers SET token_time = '{date}' WHERE lodgers_id = {lodgers_id};")
             # records = cursor.fetchall()
             conn.commit()
             cursor.execute(f"Select token, token_time from lodgers where lodgers_id = '{lodgers_id}'")
