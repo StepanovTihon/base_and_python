@@ -14,10 +14,6 @@ errors = {
     200: "{'error':'complited'}"
 }
 
-try:
-    create_apartments("testaddress2")
-except BaseError as be:
-    print(be.txt)
 
 # load_dotenv()
 app = Flask(__name__)
@@ -31,7 +27,7 @@ def get_lodgers(id, token):
 
         if read_token(id) != token or post[0][5] < date.today():
             return '{"error":"token is deprecated"}', 400
-
+        print(to_json(["name_lodgers", "lodgers_id", "login", "password", "token", "token_time"], post))
         return json.dumps(
             to_json(["name_lodgers", "lodgers_id", "login", "password", "token", "token_time"], post)), 200
 
@@ -48,7 +44,7 @@ def get_all_lodgers():
         post = read_all_lodgers()
 
         post_json = {}
-        to_json_keys = ['name_lodgers', 'lodgers_id', 'login', 'password', 'token']
+        to_json_keys = ['name_lodgers', 'lodgers_id', 'login', 'password', 'token', "token_time", "apartments_id"]
 
         return mass_to_json(to_json_keys, post)
 
@@ -63,7 +59,7 @@ def registration():
     try:
 
         post = request.json
-        ret = create_lodgers(post["name"], post["login"], post["password"])
+        ret = create_lodgers(post["name"], post["login"], post["password"], post["address"])
 
         return "{}", 200
     except BadRequest:
@@ -88,7 +84,7 @@ def login():
 
                 new_token(ret[i][1], token, (date.today() + datetime.timedelta(days=10)))
 
-                return '{"token":"' + str(token) + '", "lodgers_id":' + str(ret[i][1]) + '}', 200
+                return '{"token":"' + str(token) + '", "lodgers_id":' + str(ret[i][1]) + ', "apartments_id":' + str(ret[i][6]) +'}', 200
 
         time.sleep(15)
         return '{"error":"Bad request"}', 400
@@ -176,7 +172,7 @@ def create_indication():
         lodger = read_lodgers(post["lodgers_id"])
         if int(read_token(post["lodgers_id"])) != int(post["token"]) or lodger[0][5] < date.today():
             return "{'error':'token is deprecated'}", 400
-
+        print(post)
         ret = create_indications(post["services_name"], post["apartments_id"], post["lodgers_id"],
                                  post["date_indications"],
                                  post["value_indications"])
@@ -209,9 +205,10 @@ def get_indication(id, token):
 @app.route('/get_service/<int:id>/<int:token>')
 def get_service(id, token):
     try:
+
         post = read_services(id)
         lodger = read_lodgers(id)
-        print(lodger[0][5], date.today(), lodger[0][5] < date.today())
+
         if read_token(id) != token or lodger[0][5] < date.today():
             return '{"error":"token is deprecated"}', 400
 

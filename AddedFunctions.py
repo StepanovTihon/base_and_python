@@ -3,11 +3,13 @@ import json
 
 def to_json(keys, values):
     post_json = {}
-    print(values)
+
     for index, value in enumerate(values[0]):
-        if keys[index] == "date":
+        if keys[index][0] == "d" or keys[index] == "token_time":
+            post_json[keys[index]] = str(value)
+        else:
             post_json[keys[index]] = value
-        post_json[keys[index]] = value
+
 
     return post_json
 
@@ -17,13 +19,15 @@ def mass_to_json(keys, post):
     for p in range(len(post)):
         dictionary = dict.fromkeys(keys)
         for i in range(len(post[p])):
-            if keys[i][0] == "d":
-                print(str(post[p][i]))
+
+            if keys[i][0] == "d" or keys[i] == "token_time":
+
+
                 dictionary[keys[i]] = str(post[p][i])
             else:
                 dictionary[keys[i]] = post[p][i]
         mass.append(dictionary)
-    print(post)
+
     return json.dumps({'arr': mass})
 
 

@@ -1,9 +1,12 @@
+import datetime
+import random
+
 import psycopg2
 import datetime
+from datetime import date
 
 f = open('.env.txt', 'r')
 data = f.read().split("|")
-
 
 
 class BaseError(Exception): pass
@@ -36,7 +39,8 @@ def existence_lodgers(id=-1, login=''):
 
     with conn:
         with conn.cursor() as cursor:
-            cursor.execute(f"Select * from lodgers where login = '{login}'" if login != ''
+
+            cursor.execute(f"Select * from lodgers where login = '{login}'" if id == -1
                            else f"Select * from lodgers Where lodgers_id = '{id}'")
 
             return cursor.fetchall()
@@ -65,28 +69,6 @@ def existence_indications(services_name, lodgers_id, date_indications):
                            f"date_indications = '{date_indications}' AND lodgers_id = {lodgers_id}")
 
             return cursor.fetchall()
-    raise ServerError()
-
-
-def create_apartments(you_address):
-    conn = psycopg2.connect(dbname=data[0], user=data[1], password=data[2], host=data[3])
-
-    with conn:
-        with conn.cursor() as cursor:
-            try:
-                result = existence_apartments(-1, you_address)
-            except:
-                raise ServerError()
-            else:
-                if len(existence_apartments(-1, you_address)) != 0:
-                    raise BadRequest()
-
-            cursor.execute(f"Insert into apartments(address) values('{you_address}');")
-            conn.commit()
-            cursor.execute(f"Select address, apartments_id from apartments where address = '{you_address}'")
-            records = cursor.fetchall()
-
-            return records
     raise ServerError()
 
 
@@ -131,25 +113,53 @@ def delete_apartments(apartments_id):
     raise ServerError()
 
 
-def create_lodgers(name_lodgers, login, password):
+def create_lodgers(name_lodgers, login, password, you_address):
     conn = psycopg2.connect(dbname=data[0], user=data[1], password=data[2], host=data[3])
     with conn:
         with conn.cursor() as cursor:
             try:
-                result = existence_lodgers(login)
+                result = existence_lodgers(login=login)
             except:
+
                 raise ServerError()
             else:
-                if len(existence_lodgers(login)) != 0:
+
+                if len(existence_lodgers(login=login)) != 0:
                     raise BadRequest()
+            try:
+                result = existence_apartments(-1, you_address)
+            except:
+
+                raise ServerError()
+            else:
+                if len(existence_apartments(-1, you_address)) == 0:
+                    raise BadRequest()
+
+            cursor.execute(f"Select address, apartments_id from apartments where address = '{you_address}'")
+            records = cursor.fetchall()
             cursor.execute(
-                f"Insert into lodgers(name_lodgers,login,password, token) values('{name_lodgers}','{login}',"
-                f"'{password}', {int(random.random() * 10000)});")
+                f"Insert into lodgers(name_lodgers,login,password, token, apartments_id, token_time) "
+                f"values('{name_lodgers}','{login}',"
+                f"'{password}', {int(random.randint(0, 1000000))}, {records[0][1]}, '{(date.today() + datetime.timedelta(days=10))}');")
             # records = cursor.fetchall()
             conn.commit()
             cursor.execute(
                 f"Select name_lodgers, lodgers_id, login, password, token from lodgers where name_lodgers = '{name_lodgers}'")
             records = cursor.fetchall()
+            return records
+    raise ServerError()
+
+
+def create_apartments(you_address):
+    conn = psycopg2.connect(dbname=data[0], user=data[1], password=data[2], host=data[3])
+
+    with conn:
+        with conn.cursor() as cursor:
+            cursor.execute(f"Insert into apartments(address) values('{you_address}');")
+            conn.commit()
+            cursor.execute(f"Select address, apartments_id from apartments where address = '{you_address}'")
+            records = cursor.fetchall()
+
             return records
     raise ServerError()
 
@@ -172,13 +182,15 @@ def read_all_lodgers():
 
     with conn:
         with conn.cursor() as cursor:
-            cursor.execute("Select name_lodgers, lodgers_id, login, password, token from lodgers")
+            cursor.execute(
+                "Select name_lodgers, lodgers_id, login, password, token, token_time, apartments_id from lodgers")
             records = cursor.fetchall()
 
             conn.rollback()
 
             return records
     raise ServerError()
+
 
 def read_all_lodgers_and_address():
     conn = psycopg2.connect(dbname=data[0], user=data[1], password=data[2], host=data[3])
@@ -231,9 +243,7 @@ def create_services(name_services, summ_of_payment, apartments_id, lodgers_id, d
             # records = cursor.fetchall()
             conn.commit()
 
-            records = cursor.fetchall()
-
-            return records
+            return []
     raise ServerError()
 
 
