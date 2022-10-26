@@ -6,6 +6,7 @@ from BaseWorkspace import *
 from AddedFunctions import *
 from datetime import date
 from flask import Flask, request
+from flask import send_from_directory
 
 # from dotenv import load_dotenv
 errors = {
@@ -35,6 +36,7 @@ def get_lodgers(id, token):
         return '{"error":"BadRequest"}', 400
     except ServerError:
         return '{"error":"BaseError"}', 500
+
 
 
 @app.route('/AllLodger/')
@@ -283,7 +285,8 @@ def get_excel():
             services = []
             summ = 0
             for lodger in read_all_lodgers_and_address():
-                if lodger[0][5] == apartment[0]:
+                print(lodger)
+                if lodger[5] == apartment[0]:
                     services += read_services(lodger[1])
 
             services.sort(key=custom_key)
@@ -308,7 +311,7 @@ def get_excel():
 
         file.save('abc.xlsx')
 
-        return "{}", 200
+        return send_from_directory('./', 'abc.xlsx'), 200
     except BadRequest:
         return '{"error":"BadRequest"}', 400
     except ServerError:
@@ -324,6 +327,9 @@ def get_excel():
 #
 #     return "all good"
 
+@app.route('/<path:path>')
+def send_report(path):
+    return send_from_directory('static', path)
 
 if __name__ == "__main__":
     app.run()
