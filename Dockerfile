@@ -6,7 +6,14 @@ COPY requirements.txt requirements.txt
 
 COPY . /python
 
-RUN pip3 install -r requirements.txt
+RUN pip3 install time
+
+RUN pip3 install openpyxl
+
+RUN pip3 install datetime
+
+RUN pip3 install flask
+
 
 RUN python main.py
 
