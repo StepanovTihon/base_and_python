@@ -1,10 +1,12 @@
 FROM python
 
-COPY . /python
-
 WORKDIR /python
 
-RUN pip install -r requirements.txt
+COPY requirements.txt requirements.txt
+
+COPY . /python
+
+RUN pip3 install -r requirements.txt
 
 RUN python main.py
 
