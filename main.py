@@ -15,6 +15,7 @@ errors = {
     200: "{'error':'complited'}"
 }
 
+print("hello world")
 
 # load_dotenv()
 app = Flask(__name__)
