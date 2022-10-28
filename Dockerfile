@@ -6,7 +6,6 @@ COPY requirements.txt requirements.txt
 
 COPY . /python
 
-RUN pip3 install time
 
 RUN pip3 install openpyxl
 
